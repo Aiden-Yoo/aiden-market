@@ -2,6 +2,16 @@ import twilio from "twilio";
 import { NextApiRequest, NextApiResponse } from "next";
 import withHandler, { ResponseType } from "@libs/server/withHandler";
 import client from "@libs/server/client";
+import nodemailer from "nodemailer";
+// const nodemailer = require("nodemailer");
+
+const transporter = nodemailer.createTransport({
+  service: "gmail",
+  auth: {
+    user: process.env.GMAIL_ID,
+    pass: process.env.GMAIL_PWD,
+  },
+});
 
 const twilioClient = twilio(process.env.TWILIO_SID, process.env.TWILIO_TOKEN);
 
@@ -36,7 +46,25 @@ async function handler(
       body: `Your login token is ${payload}.`,
     });
     console.log(message);
+  } else if (email) {
+    const sendEmail = await transporter
+      .sendMail({
+        from: `ABC <no-reply@gmail.com>`,
+        to: email,
+        subject: "token",
+        text: `your login token is ${payload}`,
+        html: `
+        <div style="text-align: center;">
+          <h3 style="color: #FA5882">ABC</h3>
+          <br />
+          <p>your login token is ${payload}</p>
+        </div>
+    `,
+      })
+      .then((result: any) => console.log(result))
+      .catch((err: any) => console.log(err));
   }
+
   return res.json({
     ok: true,
   });
